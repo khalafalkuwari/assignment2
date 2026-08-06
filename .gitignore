@@ -1,0 +1,15 @@
+# Python environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Console log from train.py; the run is reproducible, the log is not committed.
+train.log
+
+# OS
+.DS_Store
+Thumbs.db
+
