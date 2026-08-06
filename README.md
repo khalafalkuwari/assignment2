@@ -110,10 +110,18 @@ Runs the cross-validated model selection, retrains the winner on all 240 trainin
 examples, rewrites `model_checkpoint/`, `public_test_predictions.csv` and `results.json`.
 Takes roughly 7 minutes on an 8-core CPU laptop. The random seed is fixed (`20260804`).
 
-> Note: `train.py` writes `feature_pipeline.joblib` with a float64 SVD basis (~97 MB).
-> The committed checkpoint stores it in float32 (~47 MB) to stay clear of GitHub's
-> 100 MB file limit. The change is numerically negligible — verified as a maximum
-> probability shift of 2.4e-08 and zero label changes across all 400 public test reviews.
+> Note: the committed checkpoint differs from what `train.py` emits in two storage-only
+> respects, neither of which changes the model:
+>
+> 1. **The SVD basis is stored in float32**, not the float64 `train.py` writes. This takes
+>    `feature_pipeline.joblib` from ~97 MB to a size that clears GitHub's 100 MB file
+>    limit. Verified as a maximum probability shift of 2.4e-08 and zero label changes
+>    across all 400 public test reviews.
+> 2. **The joblib files are stored uncompressed.** Compression saved ~9 MB but cost 90
+>    seconds of decompression on every load; uncompressed, the checkpoint loads in 0.4s.
+>    Verified bit-identical — maximum probability change exactly 0, zero label changes.
+>
+> The largest file in `model_checkpoint/` is 56 MB.
 
 ## Stage 2
 
