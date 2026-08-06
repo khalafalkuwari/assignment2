@@ -143,12 +143,22 @@ def predict(bundle: Bundle, texts: Sequence[str]) -> np.ndarray:
     return (predict_proba(bundle, texts) >= bundle.threshold).astype(int)
 
 
-def write_predictions(input_csv: str | Path, output_csv: str | Path, checkpoint_dir=CHECKPOINT_DIR):
-    """Read a CSV with `id` and `text`, write `id,predicted_label`."""
+def write_predictions(
+    input_csv: str | Path,
+    output_csv: str | Path,
+    checkpoint_dir=CHECKPOINT_DIR,
+    bundle: Bundle | None = None,
+):
+    """Read a CSV with `id` and `text`, write `id,predicted_label`.
+
+    Pass an already-loaded `bundle` to avoid re-reading the checkpoint from disk when the
+    caller has one in hand.
+    """
     import pandas as pd
 
     frame = pd.read_csv(input_csv)
-    bundle = load_model(checkpoint_dir)
+    if bundle is None:
+        bundle = load_model(checkpoint_dir)
     labels = predict(bundle, frame["text"].astype(str).tolist())
     output = pd.DataFrame({"id": frame["id"], "predicted_label": labels})
     output.to_csv(output_csv, index=False, lineterminator="\n")

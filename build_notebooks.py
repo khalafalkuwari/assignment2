@@ -344,7 +344,7 @@ grader would call, and checked against the required schema.
 from predict import write_predictions
 
 out = write_predictions(ROOT / "data" / "public_test.csv",
-                        ROOT / "public_test_predictions.csv")
+                        ROOT / "public_test_predictions.csv", bundle=bundle)
 
 assert list(out.columns) == ["id", "predicted_label"], out.columns
 assert len(out) == len(public_test) == 400
@@ -453,7 +453,7 @@ print(json.dumps(bundle.config, indent=2))
     ),
     code(
         """
-out = write_predictions(HIDDEN, ROOT / "hidden_test_predictions.csv")
+out = write_predictions(HIDDEN, ROOT / "hidden_test_predictions.csv", bundle=bundle)
 
 assert list(out.columns) == ["id", "predicted_label"]
 assert set(out.predicted_label.unique()) <= {0, 1}
