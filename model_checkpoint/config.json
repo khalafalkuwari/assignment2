@@ -1,0 +1,31 @@
+{
+  "task": "binary sentiment classification (0=negative, 1=positive)",
+  "components": [
+    "logreg",
+    "mlp"
+  ],
+  "weights": {
+    "logreg": 0.8,
+    "mlp": 0.2
+  },
+  "threshold": 0.7501,
+  "selection_metric": "balanced accuracy on repeated-stratified-CV out-of-fold predictions",
+  "cv_balanced_accuracy": 0.8111,
+  "trained_on": "data/train.csv (240 documents, 180 positive / 60 negative)",
+  "seed": 20260804,
+  "logreg_C": 10.0,
+  "mlp_architecture": {
+    "input_dim": 240,
+    "hidden_dim": 256,
+    "dropout": 0.5
+  },
+  "mlp_training": {
+    "svd_components": 300,
+    "hidden_dim": 256,
+    "dropout": 0.5,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 16,
+    "epochs": 30
+  }
+}

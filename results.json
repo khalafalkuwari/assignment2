@@ -1,0 +1,93 @@
+{
+  "seed": 20260804,
+  "train_class_counts": [
+    60,
+    180
+  ],
+  "cv_protocol": "RepeatedStratifiedKFold(n_splits=5); n_repeats=2 for logreg, 1 for the MLP",
+  "mlp_config": {
+    "svd_components": 300,
+    "hidden_dim": 256,
+    "dropout": 0.5,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 16,
+    "epochs": 30
+  },
+  "cv_table": [
+    {
+      "model": "logreg (C=3.0)",
+      "roc_auc": 0.8704,
+      "bal_acc@0.5": 0.6083,
+      "bal_acc@tuned": 0.7972,
+      "macro_f1@tuned": 0.7702,
+      "threshold": 0.6482,
+      "C": 3.0
+    },
+    {
+      "model": "logreg (C=10.0)",
+      "roc_auc": 0.8727,
+      "bal_acc@0.5": 0.6083,
+      "bal_acc@tuned": 0.8028,
+      "macro_f1@tuned": 0.7784,
+      "threshold": 0.721,
+      "C": 10.0
+    },
+    {
+      "model": "mlp (TF-IDF+SVD)",
+      "roc_auc": 0.8755,
+      "bal_acc@0.5": 0.7056,
+      "bal_acc@tuned": 0.8056,
+      "macro_f1@tuned": 0.7826,
+      "threshold": 0.8829
+    },
+    {
+      "model": "blend (logreg=0.80, mlp=0.20)",
+      "roc_auc": 0.8752,
+      "bal_acc@0.5": 0.6417,
+      "bal_acc@tuned": 0.8111,
+      "macro_f1@tuned": 0.7845,
+      "threshold": 0.7501,
+      "weights": {
+        "logreg": 0.8,
+        "mlp": 0.2
+      }
+    }
+  ],
+  "selected": {
+    "name": "blend",
+    "detail": {
+      "model": "blend (logreg=0.80, mlp=0.20)",
+      "roc_auc": 0.8752,
+      "bal_acc@0.5": 0.6417,
+      "bal_acc@tuned": 0.8111,
+      "macro_f1@tuned": 0.7845,
+      "threshold": 0.7501,
+      "weights": {
+        "logreg": 0.8,
+        "mlp": 0.2
+      }
+    },
+    "weights": {
+      "logreg": 0.8,
+      "mlp": 0.2
+    }
+  },
+  "public_test": {
+    "accuracy": 0.7775,
+    "balanced_accuracy": 0.7775,
+    "macro_f1": 0.7774,
+    "roc_auc": 0.8471,
+    "confusion_matrix": [
+      [
+        151,
+        49
+      ],
+      [
+        40,
+        160
+      ]
+    ],
+    "n": 400
+  }
+}
