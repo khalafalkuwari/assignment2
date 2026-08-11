@@ -411,7 +411,9 @@ construction: it imports `load_model` / `predict` from `predict.py` and loads th
 fine-tuned, refit, or re-thresholded — the decision threshold was fixed during Stage 1
 from cross-validated training folds and is read straight out of `config.json`.
 
-**To run:** place the released `hidden_test.csv` in `data/`, then run all cells.
+**To run:** place the released hidden test file in `data/`, then run all cells. The
+instructions refer to it as `hidden_test.csv`; it was actually published as
+`hidden_test_with_labels.csv`, and the loader below accepts either name.
 """
     ),
     code(
@@ -425,11 +427,22 @@ import pandas as pd
 from predict import load_model, predict as predict_labels, predict_proba, write_predictions
 
 ROOT = Path.cwd()
-HIDDEN = ROOT / "data" / "hidden_test.csv"
 
-assert HIDDEN.exists(), f"Place the released hidden_test.csv at {HIDDEN}"
+# The instructions call the release "hidden_test.csv"; it was published as
+# "hidden_test_with_labels.csv". Accept either name.
+CANDIDATES = ["hidden_test_with_labels.csv", "hidden_test.csv"]
+HIDDEN = next((ROOT / "data" / n for n in CANDIDATES if (ROOT / "data" / n).exists()), None)
+assert HIDDEN is not None, f"Place the released hidden test file in data/ (one of {CANDIDATES})"
+
 hidden = pd.read_csv(HIDDEN)
-print("hidden_test:", hidden.shape, "| columns:", list(hidden.columns))
+print("loaded:", HIDDEN.name, "|", hidden.shape, "| columns:", list(hidden.columns))
+print("label counts:", dict(hidden.label.value_counts().sort_index()))
+
+# Confirm the hidden set really is disjoint from everything the model saw.
+train = pd.read_csv(ROOT / "data" / "train.csv")
+public = pd.read_csv(ROOT / "data" / "public_test.csv")
+print("overlap with train      :", len(set(hidden.source_file) & set(train.source_file)))
+print("overlap with public test:", len(set(hidden.source_file) & set(public.source_file)))
 """
     ),
     md(
@@ -549,21 +562,48 @@ print("The gap is %s given that margin."
       % ("within sampling noise" if abs(gap) < 2 * se else "larger than sampling noise"))
 """
     ),
+    code(
+        """
+# Where the remaining errors fall. An imbalance between these two counts is the
+# signature of a decision threshold that is slightly off-optimal.
+fp, fn = int(cm[0, 1]), int(cm[1, 0])
+print("false positives (negative review called positive): %3d" % fp)
+print("false negatives (positive review called negative): %3d" % fn)
+print("ratio: %.2f:1 toward %s" % (max(fp, fn) / max(min(fp, fn), 1),
+                                   "false positives" if fp > fn else "false negatives"))
+
+pos_rate = float((y_pred == 1).mean())
+print("\\npredicted positive rate: %.3f (true rate is 0.500)" % pos_rate)
+print("training set positive rate was 0.750")
+"""
+    ),
     md(
         """
 ### Discussion
 
-Both test sets are balanced 50/50 and are drawn from the same Pang & Lee corpus, so a
-large gap between them would be surprising and would point at overfitting to the public
-set. Since the public test set was used **only** for reporting in Stage 1 — never for
-model selection, thresholding, or blending — the hidden-test result is a genuine
-held-out estimate and the two should agree to within sampling noise. The cell above
-quantifies that margin explicitly rather than eyeballing it.
+**The two test sets agree.** Accuracy differs by 0.42 points (0.7775 public vs 0.7733
+hidden) against a standard error of ±1.71 points, and ROC AUC differs by 0.14 points.
+Every metric moves in the same direction by a negligible amount. This is the result the
+Stage 1 protocol was designed to produce: because `public_test.csv` was used **only** for
+reporting — never for model selection, thresholding, or blending — it was already a
+genuine held-out set, so the hidden set had nothing new to expose. Had the public set
+been used for tuning, we would expect the hidden number to drop noticeably below it.
 
-The threshold is the one place where a gap could plausibly open. It was tuned on
-out-of-fold predictions from a 240-document training set, so it carries real estimation
-variance; a threshold slightly off-optimal shows up as an asymmetry between the two
-off-diagonal cells of the confusion matrix rather than as a uniform accuracy drop.
+The hidden set is also 50% larger (600 vs 400 reviews) and confirmed disjoint from both
+`train.csv` and `public_test.csv`, so it is the more reliable of the two estimates.
+
+**Where the errors remain.** The residual bias is toward false positives — negative
+reviews called positive — which is exactly the direction the 3:1 positive training prior
+predicts. The class weighting and the tuned threshold of 0.7501 removed most of that
+skew (the predicted positive rate is far closer to the true 0.500 than to the training
+set's 0.750), but not all of it. Recall is noticeably weaker on the negative class than
+on the positive class.
+
+This is the expected residue of estimating a threshold from 240 documents: the cutoff
+carries real variance, and being slightly low pushes borderline cases positive. It shows
+up as asymmetry between the two off-diagonal cells rather than as a uniform accuracy
+drop. With more labelled negatives, or a nested cross-validation loop to estimate the
+threshold more stably, this is the first gap that would close.
 """
     ),
     md(
